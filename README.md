@@ -38,39 +38,10 @@ The project began as a low-fidelity MVP focused on validating:
 - Core feature prioritization
 - Overall product vision
 
-## ⚙️ Functional Prototype
+## 📦 Repository Notice
 
-To further validate the concept, I developed a functional React + TypeScript prototype demonstrating the core EasyInvest experience.
+Due to repository file size limitations, this GitHub repository contains the portfolio version of the project.
 
-- ✅ React + TypeScript Architecture
+A larger development build containing additional assets, datasets, and extended functionality is maintained separately.
 
-- ✅ Dashboard Experience
-
-- ✅ Portfolio Tracking
-
-- ✅ Market Overview
-
-- ✅ Learning Center
-
-- ✅ AI Chat Interface
-
-- ✅ Interactive Charts
-
-- ✅ Responsive Design
-
-## 🚀 Getting Started
-- Low-Fidelity MVP
-
-    - Open directly in your browser:
-    - easyinvest-live.html
-    - No installation required.
-
-- Functional Prototype
-    - Install dependencies:
-        - npm install
-        - Run development server:
-            - npm run dev
-        - Run backend:
-            - npm run server
-        - Run both:
-            - npm run dev:full
+Please contact me if you would like to discuss the full implementation or development process.
