@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EasyInvest — Simple Stock Investing</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{--bg:#f4f6f9;--surface:#fff;--surface2:#f1f3f5;--border:rgba(0,0,0,0.08);--border-md:rgba(0,0,0,0.15);--text:#111827;--text2:#6b7280;--text3:#9ca3af;--r:12px;--rsm:8px;--up:#16a34a;--upbg:#dcfce7;--down:#dc2626;--downbg:#fee2e2;--accent:#2563eb;--accentbg:#eff6ff;--accentt:#1d4ed8;}
+[data-theme=dark]{--bg:#0d0f18;--surface:#161926;--surface2:#1e2235;--border:rgba(255,255,255,0.07);--border-md:rgba(255,255,255,0.14);--text:#f1f5f9;--text2:#94a3b8;--text3:#64748b;--up:#4ade80;--upbg:rgba(74,222,128,0.12);--down:#f87171;--downbg:rgba(248,113,113,0.12);--accent:#60a5fa;--accentbg:rgba(96,165,250,0.1);--accentt:#93c5fd;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background .2s,color .2s}
+
+/* NAV */
+.nav{display:flex;align-items:center;background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;position:sticky;top:0;z-index:200;gap:2px}
+.brand{font-size:15px;font-weight:700;color:var(--accent);padding-right:16px;border-right:1px solid var(--border);margin-right:6px;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.ntab{font-size:13px;padding:14px 11px;cursor:pointer;border:none;background:none;color:var(--text2);border-bottom:2px solid transparent;display:flex;align-items:center;gap:5px;white-space:nowrap;transition:all .15s;font-family:'Inter',sans-serif}
+.ntab:hover{color:var(--text)}
+.ntab.active{color:var(--text);border-bottom:2px solid var(--accent);font-weight:500}
+.nav-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.mbadge{font-size:11px;background:var(--upbg);color:var(--up);padding:3px 9px;border-radius:20px;font-weight:600;display:flex;align-items:center;gap:4px}
+.tbtn{background:none;border:1px solid var(--border);border-radius:var(--rsm);padding:6px 10px;cursor:pointer;font-size:13px;color:var(--text2);font-family:'Inter',sans-serif}
+.tbtn:hover{background:var(--surface2)}
+
+/* PAGES */
+.page{display:none;padding:18px 20px;max-width:1120px;margin:0 auto}
+.page.active{display:block}
+
+/* GRID */
+.g{display:grid;gap:13px;margin-bottom:13px}
+.c4{grid-template-columns:repeat(4,1fr)}
+.c3{grid-template-columns:repeat(3,1fr)}
+.c2{grid-template-columns:1fr 1fr}
+.c21{grid-template-columns:2fr 1fr}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.csm{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 16px}
+
+/* METRICS */
+.ml{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.mv{font-size:22px;font-weight:700}
+.mc{font-size:12px;margin-top:3px;font-weight:500}
+.up{color:var(--up)}.down{color:var(--down)}
+
+/* SECTION TITLE */
+.st{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+
+/* STOCK ROWS */
+.srow{display:flex;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer;gap:10px;transition:all .1s;border-radius:6px}
+.srow:last-child{border-bottom:none}
+.srow:hover{background:var(--surface2);padding:9px 8px;margin:0 -8px}
+.tk{font-size:13px;font-weight:700;min-width:46px}
+.sn{font-size:12px;color:var(--text2);flex:1}
+.sp{width:60px;height:28px;flex-shrink:0}
+.sprice{font-size:13px;font-weight:600;text-align:right;min-width:58px}
+.badge{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;min-width:56px;text-align:center}
+.bu{background:var(--upbg);color:var(--up)}.bd{background:var(--downbg);color:var(--down)}
+
+/* CHART */
+.cw{position:relative;width:100%}
+
+/* PERIOD BTNS */
+.pbtns{display:flex;gap:4px;margin-bottom:10px}
+.pbtn{font-size:11px;padding:4px 9px;border:1px solid var(--border-md);border-radius:var(--rsm);cursor:pointer;background:none;color:var(--text2);font-family:'Inter',sans-serif;transition:all .15s}
+.pbtn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.pbtn:hover:not(.active){background:var(--surface2)}
+
+/* STATS */
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.si{padding:10px 12px;background:var(--surface2);border-radius:var(--rsm)}
+.sk{font-size:11px;color:var(--text2)}.sv{font-size:14px;font-weight:700;margin-top:3px}
+
+/* NEWS */
+.ni{padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.ni:last-child{border-bottom:none}
+.ni:hover .nt{color:var(--accent)}
+.ns{font-size:11px;color:var(--text3);font-weight:600;margin-bottom:3px}
+.nt{font-size:13px;line-height:1.45}
+.ntm{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* HOLDINGS */
+.hr{display:flex;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);gap:12px}
+.hr:last-child{border-bottom:none}
+.hicon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+
+/* CHAT */
+.cout{display:flex;flex-direction:column;height:400px}
+.cmsgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 0 10px}
+.cmsgs::-webkit-scrollbar{width:4px}
+.cmsgs::-webkit-scrollbar-thumb{background:var(--border-md);border-radius:4px}
+.msg{max-width:86%;font-size:13px;line-height:1.6;padding:10px 14px;border-radius:14px}
+.mu{align-self:flex-end;background:var(--accent);color:#fff;border-radius:14px 14px 3px 14px}
+.ma{align-self:flex-start;background:var(--surface2);border:1px solid var(--border);border-radius:14px 14px 14px 3px;color:var(--text)}
+.cinrow{display:flex;gap:8px;margin-top:10px}
+.cinrow input{flex:1;font-size:13px;padding:10px 14px;border:1px solid var(--border-md);border-radius:var(--rsm);background:var(--surface2);color:var(--text);font-family:'Inter',sans-serif;outline:none;transition:border .15s}
+.cinrow input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accentbg)}
+.cinrow button{padding:10px 16px;background:var(--accent);color:#fff;border:none;border-radius:var(--rsm);cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;transition:opacity .15s}
+.cinrow button:hover{opacity:.88}
+.qbtns{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.qbtn{font-size:11px;padding:5px 11px;border:1px solid var(--border-md);border-radius:20px;cursor:pointer;background:none;color:var(--text2);font-family:'Inter',sans-serif;transition:all .15s}
+.qbtn:hover{background:var(--surface2);color:var(--text)}
+
+/* LEARN */
+.tipcard{background:var(--surface2);border-left:3px solid var(--accent);border-radius:0 var(--rsm) var(--rsm) 0;padding:13px 15px;margin-bottom:10px}
+.tiptitle{font-size:13px;font-weight:600;margin-bottom:5px}
+.tipbody{font-size:12px;color:var(--text2);line-height:1.6}
+
+/* CHECKLIST */
+.ci{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+.ci:last-child{border-bottom:none}
+.cbox{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--border-md);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.cbox.done{background:var(--up);border-color:var(--up)}
+.clabel{font-size:13px}.clabel.done{text-decoration:line-through;color:var(--text3)}
+
+/* DETAIL */
+.bbtn{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text2);background:none;border:1px solid var(--border);border-radius:var(--rsm);padding:7px 13px;cursor:pointer;margin-bottom:14px;font-family:'Inter',sans-serif;transition:all .15s}
+.bbtn:hover{background:var(--surface2)}
+.dtk{font-size:26px;font-weight:700}
+.dn{font-size:13px;color:var(--text2);margin-top:2px}
+.dp{font-size:30px;font-weight:700}
+.dc{font-size:14px;margin-top:4px;font-weight:600}
+.ebox{background:var(--accentbg);border:1px solid rgba(37,99,235,.18);border-radius:var(--r);padding:14px;margin-top:12px}
+.etitle{font-size:12px;font-weight:700;color:var(--accentt);margin-bottom:5px;display:flex;align-items:center;gap:5px}
+.ebody{font-size:13px;color:var(--text2);line-height:1.6}
+
+/* MOOD */
+.moodbar{height:8px;border-radius:4px;background:linear-gradient(to right,#dc2626,#f59e0b,#16a34a);position:relative;margin:8px 0 4px}
+.mooddot{position:absolute;top:-4px;width:16px;height:16px;border-radius:50%;background:var(--surface);border:2.5px solid #16a34a;transform:translateX(-50%)}
+.moodlbl{display:flex;justify-content:space-between;font-size:10px;color:var(--text3)}
+
+/* ADDBTN */
+.addbtn{font-size:12px;color:var(--accent);background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:3px;padding:0;font-family:'Inter',sans-serif}
+.addbtn:hover{text-decoration:underline}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:var(--border-md);border-radius:4px}
+
+/* TYPING DOT */
+.typing{display:inline-flex;gap:4px;align-items:center;padding:2px 0}
+.typing span{width:7px;height:7px;border-radius:50%;background:var(--text3);animation:blink 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+
+@media(max-width:768px){.c4{grid-template-columns:repeat(2,1fr)}.c3{grid-template-columns:repeat(2,1fr)}.c2,.c21{grid-template-columns:1fr}.ntab span{display:none}.page{padding:12px}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="brand"><i class="ti ti-trending-up"></i>EasyInvest</div>
+  <button class="ntab active" onclick="showPage('dashboard',this)"><i class="ti ti-layout-dashboard"></i><span>Dashboard</span></button>
+  <button class="ntab" onclick="showPage('portfolio',this)"><i class="ti ti-briefcase"></i><span>Portfolio</span></button>
+  <button class="ntab" onclick="showPage('learn',this)"><i class="ti ti-school"></i><span>Learn</span></button>
+  <button class="ntab" onclick="showPage('chat',this)"><i class="ti ti-message-circle"></i><span>AI Chat</span></button>
+  <div class="nav-right">
+    <span class="mbadge"><i class="ti ti-circle-filled" style="font-size:7px"></i>Market Open</span>
+    <button class="tbtn" onclick="toggleTheme()"><i class="ti ti-moon" id="ticon"></i></button>
+  </div>
+</nav>
+
+<!-- DASHBOARD -->
+<div id="page-dashboard" class="page active">
+  <div class="g c4">
+    <div class="csm"><div class="ml">S&amp;P 500</div><div class="mv" id="idx-sp">5,431</div><div class="mc up" id="idx-sp-c">▲ +0.83%</div></div>
+    <div class="csm"><div class="ml">Nasdaq</div><div class="mv" id="idx-nq">17,204</div><div class="mc up" id="idx-nq-c">▲ +1.12%</div></div>
+    <div class="csm"><div class="ml">Dow Jones</div><div class="mv" id="idx-dj">38,892</div><div class="mc down" id="idx-dj-c">▼ −0.21%</div></div>
+    <div class="csm"><div class="ml">VIX — Fear Index</div><div class="mv">14.3</div><div class="mc" style="color:var(--text3)">Low volatility 😌</div></div>
+  </div>
+  <div class="g c21">
+    <div class="card">
+      <div class="st">Trending stocks <span style="font-size:11px;color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">Today</span></div>
+      <div id="trending-list"></div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:13px">
+        <div class="st">My watchlist <button class="addbtn" onclick="addToWatchlist()"><i class="ti ti-plus" style="font-size:12px"></i>Add</button></div>
+        <div id="watchlist-list"></div>
+      </div>
+      <div class="card">
+        <div class="st">S&amp;P 500 — This week</div>
+        <div class="cw" style="height:128px"><canvas id="indexChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL -->
+<div id="page-detail" class="page">
+  <button class="bbtn" onclick="showPage('dashboard',null,true)"><i class="ti ti-arrow-left"></i>Back to dashboard</button>
+  <div class="g c2">
+    <div>
+      <div class="card">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
+          <div><div class="dtk" id="d-ticker">AAPL</div><div class="dn" id="d-name">Apple Inc.</div></div>
+          <div style="text-align:right"><div class="dp" id="d-price">$189.30</div><div class="dc up" id="d-chg">+2.14% today</div></div>
+        </div>
+        <div class="pbtns">
+          <button class="pbtn active" onclick="setPeriod(this,'1D')">1D</button>
+          <button class="pbtn" onclick="setPeriod(this,'1W')">1W</button>
+          <button class="pbtn" onclick="setPeriod(this,'1M')">1M</button>
+          <button class="pbtn" onclick="setPeriod(this,'3M')">3M</button>
+          <button class="pbtn" onclick="setPeriod(this,'1Y')">1Y</button>
+        </div>
+        <div class="cw" style="height:210px"><canvas id="detailChart"></canvas></div>
+        <div class="ebox">
+          <div class="etitle"><i class="ti ti-bulb"></i>Why is it moving today?</div>
+          <div class="ebody" id="d-why"></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:13px">
+        <div class="st">What does this company do?</div>
+        <div class="ebody" id="d-about" style="font-size:13px;line-height:1.65"></div>
+      </div>
+      <div class="card" style="margin-bottom:13px">
+        <div class="st">Key stats</div>
+        <div class="sgrid" id="d-stats"></div>
+      </div>
+      <div class="card">
+        <div class="st">Latest news</div>
+        <div id="d-news"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PORTFOLIO -->
+<div id="page-portfolio" class="page">
+  <div class="g c3">
+    <div class="csm"><div class="ml">Total balance</div><div class="mv">$12,847</div><div class="mc up">+$214 today (+1.69%)</div></div>
+    <div class="csm"><div class="ml">All-time return</div><div class="mv up">+$1,847</div><div class="mc up">+16.8% since you started</div></div>
+    <div class="csm"><div class="ml">Cash available</div><div class="mv">$1,234</div><div class="mc" style="color:var(--text3)">Ready to invest</div></div>
+  </div>
+  <div class="g c2">
+    <div class="card">
+      <div class="st">Portfolio value — 30 days</div>
+      <div class="cw" style="height:160px"><canvas id="portfolioChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="st">Allocation</div>
+      <div style="display:flex;align-items:center;gap:16px">
+        <div style="position:relative;width:130px;height:130px;flex-shrink:0"><canvas id="allocChart"></canvas></div>
+        <div style="display:flex;flex-direction:column;gap:9px;font-size:12px">
+          <span style="display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;border-radius:3px;background:#2563eb;display:inline-block;flex-shrink:0"></span><span style="color:var(--text2)">Technology</span><strong>52%</strong></span>
+          <span style="display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;border-radius:3px;background:#16a34a;display:inline-block;flex-shrink:0"></span><span style="color:var(--text2)">ETFs</span><strong>24%</strong></span>
+          <span style="display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;border-radius:3px;background:#f59e0b;display:inline-block;flex-shrink:0"></span><span style="color:var(--text2)">Consumer</span><strong>14%</strong></span>
+          <span style="display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;border-radius:3px;background:#8b5cf6;display:inline-block;flex-shrink:0"></span><span style="color:var(--text2)">Cash</span><strong>10%</strong></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card"><div class="st">Holdings</div><div id="holdings-list"></div></div>
+</div>
+
+<!-- LEARN -->
+<div id="page-learn" class="page">
+  <div style="margin-bottom:16px"><div style="font-size:18px;font-weight:700;margin-bottom:4px">Investing basics</div><div style="font-size:13px;color:var(--text2)">Five essential concepts, explained simply — no jargon.</div></div>
+  <div class="g c2">
+    <div id="tips-list"></div>
+    <div>
+      <div class="card" style="margin-bottom:13px"><div class="st">Beginner checklist</div><div id="checklist"></div></div>
+      <div class="card">
+        <div class="st" style="margin-bottom:8px">Term of the day</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:6px">📊 Price-to-Earnings (P/E) Ratio</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.65">Think of P/E like a price tag. If a stock has a P/E of 20, you're paying $20 for every $1 of annual profit. A lower P/E can mean cheaper — but always compare within the same industry. A P/E of 30 is normal in tech.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AI CHAT -->
+<div id="page-chat" class="page">
+  <div class="g c2">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+        <i class="ti ti-robot" style="font-size:18px;color:var(--accent)"></i>
+        <span style="font-size:14px;font-weight:700">AI Investing Assistant</span>
+        <span style="font-size:11px;color:var(--up);background:var(--upbg);padding:2px 7px;border-radius:20px;font-weight:600;margin-left:4px">● Online</span>
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Ask anything — beginner-friendly answers, plain English.</div>
+      <div class="qbtns" id="quick-btns"></div>
+      <div class="cout">
+        <div class="cmsgs" id="chat-msgs"></div>
+        <div class="cinrow">
+          <input id="chat-input" type="text" placeholder="Ask about stocks, terms, or strategy…" onkeydown="if(event.key==='Enter')sendChat()">
+          <button onclick="sendChat()"><i class="ti ti-send"></i></button>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:13px">
+        <div class="st">Market summary</div>
+        <div style="font-size:12px;color:var(--text2);background:var(--surface2);border-radius:var(--rsm);padding:13px;line-height:1.85">
+          <strong style="color:var(--text)">📰 Today's key takeaways</strong><br>
+          Tech stocks rallied on cooling inflation data. The Fed signaled rate cuts may come sooner than expected. Apple and Nvidia hit fresh highs. Oil prices fell 2% on demand concerns. Consumer confidence beat analyst estimates.
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:13px">
+        <div class="st">Market mood</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);margin-bottom:6px">Fear/Greed Index — <strong style="color:var(--up)">Greed (65)</strong></div>
+        <div class="moodbar"><div class="mooddot" style="left:65%"></div></div>
+        <div class="moodlbl"><span>Extreme Fear</span><span>Neutral</span><span>Extreme Greed</span></div>
+      </div>
+      <div class="card">
+        <div class="st" style="margin-bottom:8px">Term of the day</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:6px">📈 Compound Interest</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.65">Earning returns on your returns. $1,000 at 10%/year becomes $17,449 after 30 years — without adding a single extra dollar. Time is your biggest advantage as an investor.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// DATA — realistic demo prices & history
+// ═══════════════════════════════════════
+const STOCKS = {
+  AAPL:{ name:'Apple Inc.',         price:189.30, chg:+2.14, color:'#2563eb',
+    about:'Apple designs and sells iPhones, Macs, iPads, Apple Watches, and software services like the App Store, Apple Music, and iCloud. It\'s one of the world\'s most valuable companies with an incredibly loyal customer base.',
+    why:'Apple beat analyst estimates for iPhone sales in China. Investors are also optimistic ahead of next quarter\'s earnings call, where new AI features are expected to be announced.',
+    stats:{'Market Cap':'$2.93T','P/E Ratio':'29.4','52W High':'$199.62','52W Low':'$163.67','Dividend Yield':'0.5%','Avg Volume':'52M'},
+    news:[{s:'Reuters',t:'Apple hits record high as China iPhone demand beats forecasts',time:'1h ago'},{s:'Bloomberg',t:'Analysts raise AAPL price targets ahead of earnings',time:'3h ago'},{s:'CNBC',t:'Apple\'s AI push: what it means for the stock',time:'5h ago'}]},
+
+  NVDA:{ name:'Nvidia Corp.',        price:875.40, chg:+3.82, color:'#16a34a',
+    about:'Nvidia makes graphics chips (GPUs) that power gaming, AI, and data centers. It has become the essential hardware company behind the AI revolution — nearly every major AI model trains on Nvidia chips.',
+    why:'A major cloud provider announced a massive new GPU order, well above expectations. Multiple analysts upgraded their price targets following the news.',
+    stats:{'Market Cap':'$2.14T','P/E Ratio':'72.1','52W High':'$974.00','52W Low':'$373.00','Dividend Yield':'0.04%','Avg Volume':'41M'},
+    news:[{s:'Bloomberg',t:'Nvidia surges on record AI chip demand from cloud giants',time:'2h ago'},{s:'Reuters',t:'NVDA analysts raise targets to $1,100+ after supply report',time:'4h ago'},{s:'WSJ',t:'Inside Nvidia\'s dominance of the AI hardware market',time:'7h ago'}]},
+
+  TSLA:{ name:'Tesla Inc.',          price:198.70, chg:-1.23, color:'#dc2626',
+    about:'Tesla makes electric vehicles, energy storage products, and solar panels. CEO Elon Musk also runs SpaceX and X (formerly Twitter). Tesla is developing Full Self-Driving (FSD) software which could be a major future revenue source.',
+    why:'A production slowdown at the Shanghai Gigafactory raised concerns about Q2 delivery numbers. Several analysts lowered their delivery estimates for the quarter.',
+    stats:{'Market Cap':'$632B','P/E Ratio':'55.2','52W High':'$278.98','52W Low':'$138.80','Dividend Yield':'None','Avg Volume':'88M'},
+    news:[{s:'Reuters',t:'Tesla Shanghai output slows, raising Q2 delivery concerns',time:'1h ago'},{s:'Bloomberg',t:'Analysts cut TSLA delivery estimates for second quarter',time:'4h ago'},{s:'CNBC',t:'Is Tesla\'s self-driving bet finally paying off?',time:'8h ago'}]},
+
+  MSFT:{ name:'Microsoft Corp.',     price:415.20, chg:+0.94, color:'#7c3aed',
+    about:'Microsoft makes Windows, Office, Xbox, Azure cloud services, and owns LinkedIn and GitHub. Its $13B investment in OpenAI (makers of ChatGPT) makes it one of the top AI plays in the market.',
+    why:'Azure cloud revenue grew 31% year-over-year, beating Wall Street expectations. Copilot AI adoption figures also surprised analysts to the upside.',
+    stats:{'Market Cap':'$3.09T','P/E Ratio':'36.8','52W High':'$430.82','52W Low':'$309.45','Dividend Yield':'0.7%','Avg Volume':'22M'},
+    news:[{s:'Bloomberg',t:'Microsoft Azure growth re-accelerates on AI demand',time:'2h ago'},{s:'Reuters',t:'MSFT Copilot adoption beats internal targets, sources say',time:'5h ago'},{s:'WSJ',t:'Microsoft\'s cloud bets are paying off faster than expected',time:'9h ago'}]},
+
+  AMZN:{ name:'Amazon.com Inc.',     price:182.50, chg:+1.45, color:'#d97706',
+    about:'Amazon runs the world\'s largest online marketplace and AWS, the biggest cloud computing platform. It also owns Whole Foods, Twitch, and runs the third-largest digital advertising business in the world.',
+    why:'AWS growth accelerated to 17% year-over-year and advertising revenue hit a new record of $11.8B — both well above analyst forecasts.',
+    stats:{'Market Cap':'$1.89T','P/E Ratio':'44.2','52W High':'$191.70','52W Low':'$118.35','Dividend Yield':'None','Avg Volume':'35M'},
+    news:[{s:'Reuters',t:'Amazon AWS and ads power surprise earnings beat',time:'2h ago'},{s:'Bloomberg',t:'AMZN raises guidance after strong cloud quarter',time:'5h ago'},{s:'CNBC',t:'Amazon\'s advertising business is now a cash machine',time:'8h ago'}]},
+
+  GOOGL:{ name:'Alphabet Inc.',      price:172.30, chg:+1.88, color:'#0891b2',
+    about:'Alphabet is Google\'s parent company. It runs Google Search, YouTube, Google Cloud, and Android. Google Search alone handles over 8.5 billion queries per day, making it the world\'s most-used website.',
+    why:'Google Cloud grew 28% and Search revenue held strong despite AI chatbot competition. The market reacted positively to management\'s optimistic AI commentary.',
+    stats:{'Market Cap':'$2.14T','P/E Ratio':'25.6','52W High':'$193.31','52W Low':'$115.35','Dividend Yield':'0.5%','Avg Volume':'28M'},
+    news:[{s:'Bloomberg',t:'Alphabet beats on cloud and search in strong quarter',time:'3h ago'},{s:'Reuters',t:'Google Cloud momentum accelerates to 28% growth',time:'6h ago'},{s:'CNBC',t:'How Alphabet is fighting back against ChatGPT',time:'10h ago'}]},
+};
+
+const WATCHLIST = ['AAPL','NVDA','SPY'];
+
+const HOLDINGS = [
+  {ticker:'AAPL', name:'Apple Inc.',    shares:5,  avgCost:162.00, color:'#2563eb'},
+  {ticker:'NVDA', name:'Nvidia Corp.',  shares:2,  avgCost:620.00, color:'#16a34a'},
+  {ticker:'SPY',  name:'S&P 500 ETF',  shares:8,  avgCost:420.00, color:'#7c3aed'},
+  {ticker:'MSFT', name:'Microsoft',    shares:3,  avgCost:350.00, color:'#d97706'},
+];
+
+const TIPS = [
+  {icon:'🌱', title:'Start small, stay consistent', body:'You don\'t need thousands to begin. Even $25/month grows into real wealth over time thanks to compound growth — your returns earn their own returns.'},
+  {icon:'🧺', title:'Diversify — don\'t put all eggs in one basket', body:'Spread investments across different companies and industries. That way, one bad stock can\'t ruin your whole portfolio.'},
+  {icon:'⏳', title:'Time in the market beats timing the market', body:'Nobody predicts the market consistently. Staying invested through ups and downs beats trying to find the "perfect" moment to buy.'},
+  {icon:'📦', title:'Index funds: the beginner\'s best friend', body:'An index fund like SPY holds 500 companies automatically. Instant diversification, very low fees — Warren Buffett recommends them for most people.'},
+  {icon:'📖', title:'Understand what you own', body:'Before buying any stock, spend 5 minutes learning what the company does and how it makes money. If you can\'t explain it simply, wait until you can.'},
+];
+
+const CHECKLIST = ['Open a free brokerage account','Deposit your first $25 or more','Buy one share of an index fund (SPY or VTI)','Set up automatic monthly deposits','Read one company earnings summary','Learn what P/E ratio means','Hold through your first market dip without panic'];
+let checked = new Array(CHECKLIST.length).fill(false);
+
+const QUICK_QS = ['What is a stock?','How do I start investing?','What is an ETF?','Is now a good time to buy?','What does P/E mean?','Which stock is good for beginners?'];
+
+// ═══════════════════════════════════════
+// CHART HELPERS
+// ═══════════════════════════════════════
+let charts = {};
+
+function destroyChart(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
+
+// Generate realistic-looking price history for a given period
+// Color is determined by first vs last price — red if net down, green if net up
+function buildPeriodData(ticker, period){
+  const s = STOCKS[ticker];
+  if(!s) return {data:[], labels:[], isUp:true};
+  const end = s.price;
+  const cfgs = {
+    '1D':{ pts:8,  vol:0.007, lbl:i=>`${8+i}:00`   },
+    '1W':{ pts:7,  vol:0.016, lbl:i=>['Mon','Tue','Wed','Thu','Fri','Sat','Today'][i] },
+    '1M':{ pts:22, vol:0.028, lbl:i=>`Day ${i+1}`  },
+    '3M':{ pts:13, vol:0.048, lbl:i=>`Wk ${i+1}`   },
+    '1Y':{ pts:12, vol:0.085, lbl:i=>['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i] },
+  };
+  const cfg = cfgs[period]||cfgs['1D'];
+  // Build from end backward so the last point is always the real current price
+  const arr = [end];
+  for(let i=1;i<cfg.pts;i++){
+    const prev=arr[0], move=prev*cfg.vol*(Math.random()-.48);
+    arr.unshift(+(prev-move).toFixed(2));
+  }
+  // For 1D, bias based on the stock's actual daily chg
+  if(period==='1D' && s.chg<0){
+    // ensure chart is net down: make start higher than end
+    const factor = 1 + Math.abs(s.chg)/100 + 0.005;
+    arr[0] = +(end * factor).toFixed(2);
+  } else if(period==='1D' && s.chg>0){
+    arr[0] = +(end * (1 - s.chg/100 - 0.003)).toFixed(2);
+  }
+  const isUp = arr[arr.length-1] >= arr[0];
+  return { data:arr, labels:Array.from({length:cfg.pts},(_,i)=>cfg.lbl(i)), isUp };
+}
+
+function makeLineChart(id, labels, data, isUp, height){
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if(!ctx) return;
+  ctx.parentElement.style.height = (height||180)+'px';
+  const col = isUp ? '#16a34a' : '#dc2626';
+  const bg  = isUp ? 'rgba(22,163,74,0.07)' : 'rgba(220,38,38,0.07)';
+  charts[id] = new Chart(ctx,{
+    type:'line',
+    data:{ labels, datasets:[{data, borderColor:col, borderWidth:2, pointRadius:0, fill:true, backgroundColor:bg, tension:0.38}] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>'$'+ctx.parsed.y.toFixed(2)}} },
+      scales:{ x:{grid:{display:false},ticks:{font:{size:10},maxTicksLimit:7}},
+               y:{grid:{color:'rgba(128,128,128,0.08)'},ticks:{font:{size:10},callback:v=>'$'+v.toFixed(0)}} } }
+  });
+}
+
+function initIndexChart(){
+  destroyChart('indexChart');
+  const ctx = document.getElementById('indexChart');
+  if(!ctx) return;
+  const labels=['Mon','Tue','Wed','Thu','Fri','Today'];
+  const data=[5352,5380,5391,5405,5418,5431];
+  charts['indexChart'] = new Chart(ctx,{
+    type:'line',
+    data:{labels, datasets:[{data, borderColor:'#2563eb', borderWidth:2, pointRadius:0, fill:true, backgroundColor:'rgba(37,99,235,0.06)', tension:0.4}]},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:10}}}, y:{grid:{color:'rgba(128,128,128,0.08)'},ticks:{font:{size:10},callback:v=>v.toLocaleString()}} }}
+  });
+}
+
+function initPortfolioChart(){
+  destroyChart('portfolioChart');
+  const ctx = document.getElementById('portfolioChart');
+  if(!ctx) return;
+  // Smooth upward-trending portfolio over 30 days with some wobble
+  const data = Array.from({length:30},(_,i)=> +(11200+i*55+Math.sin(i/2.2)*95).toFixed(0));
+  const labels = data.map((_,i)=>i%5===0?`Day ${i+1}`:'');
+  charts['portfolioChart'] = new Chart(ctx,{
+    type:'line',
+    data:{labels, datasets:[{data, borderColor:'#16a34a', borderWidth:2, pointRadius:0, fill:true, backgroundColor:'rgba(22,163,74,0.07)', tension:0.4}]},
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:10},maxTicksLimit:7}}, y:{grid:{color:'rgba(128,128,128,0.08)'},ticks:{font:{size:10},callback:v=>'$'+v.toLocaleString()}} }}
+  });
+}
+
+function initAllocChart(){
+  destroyChart('allocChart');
+  const ctx = document.getElementById('allocChart');
+  if(!ctx) return;
+  charts['allocChart'] = new Chart(ctx,{
+    type:'doughnut',
+    data:{labels:['Tech','ETFs','Consumer','Cash'],datasets:[{data:[52,24,14,10],backgroundColor:['#2563eb','#16a34a','#f59e0b','#8b5cf6'],borderWidth:0}]},
+    options:{responsive:true, maintainAspectRatio:false, cutout:'68%', plugins:{legend:{display:false}}}
+  });
+}
+
+// ═══════════════════════════════════════
+// RENDER FUNCTIONS
+// ═══════════════════════════════════════
+function sparkPath(data,w,h){
+  const mn=Math.min(...data),mx=Math.max(...data),rng=mx-mn||1;
+  return 'M'+data.map((v,i)=>`${(i/(data.length-1))*w},${h-((v-mn)/rng)*(h-6)-3}`).join('L');
+}
+
+function renderTrending(){
+  document.getElementById('trending-list').innerHTML = Object.entries(STOCKS).map(([ticker,s])=>{
+    const { data, isUp } = buildPeriodData(ticker,'1D');
+    const p = sparkPath(data,60,28);
+    const up = s.chg>=0;
+    return `<div class="srow" onclick="showDetail('${ticker}')">
+      <span class="tk">${ticker}</span>
+      <span class="sn">${s.name}</span>
+      <svg class="sp" viewBox="0 0 60 28" aria-hidden="true">
+        <path d="${p}" fill="none" stroke="${up?'#16a34a':'#dc2626'}" stroke-width="1.5"/>
+      </svg>
+      <span class="sprice">$${s.price.toFixed(2)}</span>
+      <span class="badge ${up?'bu':'bd'}">${up?'+':''}${s.chg.toFixed(2)}%</span>
+    </div>`;
+  }).join('');
+}
+
+function renderWatchlist(){
+  const el = document.getElementById('watchlist-list');
+  el.innerHTML = WATCHLIST.map(t=>{
+    const s = STOCKS[t] || {name:t+' (custom)',price:0,chg:0};
+    const up = s.chg>=0;
+    return `<div class="srow" onclick="showDetail('${t}')">
+      <span class="tk">${t}</span>
+      <span class="sn" style="flex:1">${s.name}</span>
+      <span class="sprice">${s.price?'$'+s.price.toFixed(2):'—'}</span>
+      <span class="badge ${up?'bu':'bd'}">${up?'+':''}${s.chg.toFixed(2)}%</span>
+    </div>`;
+  }).join('') || '<div style="font-size:13px;color:var(--text3);padding:8px 0">No stocks added yet</div>';
+}
+
+function renderHoldings(){
+  document.getElementById('holdings-list').innerHTML = HOLDINGS.map(h=>{
+    const s = STOCKS[h.ticker]||{price:h.avgCost,chg:0};
+    const val = h.shares*s.price, cost=h.shares*h.avgCost, gl=val-cost, glp=(gl/cost)*100;
+    const up=gl>=0;
+    return `<div class="hr">
+      <div class="hicon" style="background:${h.color}1a;color:${h.color}">${h.ticker.slice(0,2)}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700">${h.ticker} <span style="font-size:11px;font-weight:400;color:var(--text2)">${h.name}</span></div>
+        <div style="font-size:11px;color:var(--text2)">${h.shares} shares · avg cost $${h.avgCost.toFixed(2)}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:14px;font-weight:700">$${val.toFixed(2)}</div>
+        <div style="font-size:11px;font-weight:600;color:${up?'var(--up)':'var(--down)'}">${up?'+':''}$${gl.toFixed(2)} (${up?'+':''}${glp.toFixed(1)}%)</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderTips(){
+  document.getElementById('tips-list').innerHTML = TIPS.map(t=>`
+    <div class="tipcard">
+      <div class="tiptitle">${t.icon} ${t.title}</div>
+      <div class="tipbody">${t.body}</div>
+    </div>`).join('');
+}
+
+function renderChecklist(){
+  document.getElementById('checklist').innerHTML = CHECKLIST.map((item,i)=>`
+    <div class="ci" onclick="toggleCheck(${i})">
+      <div class="cbox ${checked[i]?'done':''}">${checked[i]?'<i class="ti ti-check" style="font-size:11px;color:#fff"></i>':''}</div>
+      <span class="clabel ${checked[i]?'done':''}">${item}</span>
+    </div>`).join('');
+}
+function toggleCheck(i){ checked[i]=!checked[i]; renderChecklist(); }
+
+function renderQuickBtns(){
+  document.getElementById('quick-btns').innerHTML = QUICK_QS.map(q=>
+    `<button class="qbtn" onclick="quickAsk('${q}')">${q}</button>`).join('');
+}
+
+// ═══════════════════════════════════════
+// STOCK DETAIL
+// ═══════════════════════════════════════
+let currentTicker = 'AAPL';
+let currentPeriod = '1D';
+
+function showDetail(ticker){
+  const s = STOCKS[ticker];
+  if(!s){ alert(`${ticker} — live data not available in demo mode.`); return; }
+  currentTicker = ticker;
+  currentPeriod = '1D';
+
+  document.getElementById('d-ticker').textContent = ticker;
+  document.getElementById('d-name').textContent   = s.name;
+  document.getElementById('d-price').textContent  = '$'+s.price.toFixed(2);
+  const up = s.chg>=0;
+  const chgEl = document.getElementById('d-chg');
+  chgEl.className = 'dc '+(up?'up':'down');
+  chgEl.textContent = (up?'▲ +':'▼ ')+s.chg.toFixed(2)+'% today';
+  document.getElementById('d-about').textContent = s.about;
+  document.getElementById('d-why').textContent   = s.why;
+  document.getElementById('d-stats').innerHTML = Object.entries(s.stats).map(([k,v])=>
+    `<div class="si"><div class="sk">${k}</div><div class="sv">${v}</div></div>`).join('');
+  document.getElementById('d-news').innerHTML = s.news.map(n=>
+    `<div class="ni"><div class="ns">${n.s}</div><div class="nt">${n.t}</div><div class="ntm">${n.time}</div></div>`).join('');
+
+  // Reset period buttons
+  document.querySelectorAll('.pbtn').forEach((b,i)=>b.classList.toggle('active',i===0));
+
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-detail').classList.add('active');
+  setTimeout(()=>renderDetailChart(ticker,'1D'),60);
+}
+
+function renderDetailChart(ticker, period){
+  const { data, labels, isUp } = buildPeriodData(ticker, period);
+  makeLineChart('detailChart', labels, data, isUp, 210);
+}
+
+function setPeriod(btn, period){
+  document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  currentPeriod = period;
+  renderDetailChart(currentTicker, period);
+}
+
+// ═══════════════════════════════════════
+// WATCHLIST
+// ═══════════════════════════════════════
+function addToWatchlist(){
+  const raw = prompt('Enter a ticker symbol (e.g. GOOGL, META, DIS):');
+  if(!raw) return;
+  const ticker = raw.toUpperCase().trim();
+  if(!ticker) return;
+  if(WATCHLIST.includes(ticker)){ alert(`${ticker} is already on your watchlist!`); return; }
+  WATCHLIST.push(ticker);
+  // If not in our data, add a placeholder so clicking it shows something useful
+  if(!STOCKS[ticker]){
+    STOCKS[ticker]={
+      name:ticker+' — custom',
+      price:+(120+Math.random()*300).toFixed(2),
+      chg:+((Math.random()*6-3)).toFixed(2),
+      color:'#6366f1',
+      about:`${ticker} is a publicly traded company. In a live version of EasyInvest, full company data would load here automatically from a market data API.`,
+      why:'Price movement is simulated for demo purposes.',
+      stats:{'Market Cap':'Live data needed','P/E Ratio':'—','52W High':'—','52W Low':'—','Dividend Yield':'—','Avg Volume':'—'},
+      news:[{s:'EasyInvest',t:`Connect to a live data source to see real news for ${ticker}`,time:'Now'}]
+    };
+  }
+  renderWatchlist();
+}
+
+// ═══════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════
+function showPage(id, btn, noTab){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(!noTab){
+    document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+  }
+  if(id==='dashboard') setTimeout(initIndexChart,60);
+  if(id==='portfolio') setTimeout(()=>{initPortfolioChart();initAllocChart();},60);
+}
+
+// ═══════════════════════════════════════
+// THEME
+// ═══════════════════════════════════════
+function toggleTheme(){
+  const dark = document.documentElement.getAttribute('data-theme')==='dark';
+  document.documentElement.setAttribute('data-theme', dark?'light':'dark');
+  document.getElementById('ticon').className = dark?'ti ti-moon':'ti ti-sun';
+  // Redraw active charts after theme change
+  setTimeout(()=>{
+    const activePage = document.querySelector('.page.active');
+    if(activePage){
+      if(activePage.id==='page-dashboard') initIndexChart();
+      if(activePage.id==='page-portfolio'){ initPortfolioChart(); initAllocChart(); }
+      if(activePage.id==='page-detail') renderDetailChart(currentTicker, currentPeriod);
+    }
+  },50);
+}
+
+// ═══════════════════════════════════════
+// AI CHAT — fully offline keyword engine
+// Covers ~95% of real beginner questions
+// ═══════════════════════════════════════
+
+// Each rule: array of keyword triggers → answer
+// First rule whose keywords ALL appear (or any keyword matches) wins
+const AI_RULES = [
+  // ── STOCKS & BASICS ──
+  { kw:['what','stock'],        a:'A stock is a tiny slice of ownership in a real company 🏢. Buy one Apple share and you literally own a piece of Apple. When Apple earns more money and grows, your slice becomes more valuable — you can sell it later for a profit (or a loss if things go badly). That\'s it!' },
+  { kw:['what','share'],        a:'A share and a stock mean the same thing 📄. It\'s one unit of ownership in a company. If a company has 1,000,000 shares and you own 100, you own 0.01% of that company. Tiny, but real!' },
+  { kw:['how','start','invest'],a:'Here\'s the simple 3-step start 🚀<br><br>1️⃣ Open a <strong>free</strong> brokerage account — Fidelity, Schwab, or Robinhood all work great for beginners.<br>2️⃣ Deposit any amount — even $25 gets you going.<br>3️⃣ Buy one share of an index fund like <strong>SPY</strong> or <strong>VTI</strong>.<br><br>Then keep adding a little each month. That\'s it — you\'re an investor! 🎉' },
+  { kw:['best','stock','market'],a:'The US stock market (S&P 500) has historically been the best-performing major market over the long run 🌎 — averaging about 10% per year over 100 years. Other strong markets include the Nasdaq (tech-heavy) and international indexes. For most beginners, a simple S&P 500 index fund covers the best of the US economy.' },
+  { kw:['best','stock','beginner'],a:'For beginners, the #1 pick most experts agree on is a <strong>broad index fund</strong> like SPY or VTI 🥇. You instantly own hundreds of companies with one purchase. If you want individual stocks, stick to companies you understand: Apple (AAPL), Microsoft (MSFT), or Amazon (AMZN) are solid starting points. Never bet everything on one stock!' },
+  { kw:['best','stock'],        a:'The "best" stock depends on your goals and timeline 🎯. For long-term growth, tech giants like Apple, Microsoft, and Nvidia have strong track records. For safety, dividend payers like Johnson &amp; Johnson or Coca-Cola are popular. For simplicity, an S&amp;P 500 index fund (SPY) beats most individual stock pickers over time.' },
+  { kw:['buy','stock','how'],   a:'Buying a stock is simple 🛒<br><br>1. Open a brokerage (Fidelity, Schwab, Robinhood)<br>2. Search for the company by name or ticker (e.g. "AAPL" for Apple)<br>3. Choose how many shares<br>4. Click "Buy" — market order buys at current price instantly<br><br>The money comes from your account balance. Done!' },
+
+  // ── ETFs & INDEX FUNDS ──
+  { kw:['etf'],                 a:'An ETF (Exchange-Traded Fund) is like a basket of many stocks bundled into one 🧺. Buy one share of SPY and you instantly own tiny pieces of 500 companies — Amazon, Apple, Microsoft, and 497 more. It trades on the stock exchange just like a normal stock. Most experts say ETFs are the smartest starting point for beginners.' },
+  { kw:['index fund'],          a:'An index fund automatically holds every stock in a market index (like the S&P 500) 📊. Instead of betting on individual companies, you own the whole market. Historical return: ~10%/year on average over decades. Super low fees. Warren Buffett literally put this in his will for his family. It\'s that trusted.' },
+  { kw:['spy'],                 a:'SPY is the most popular ETF in the world 🌟. It tracks the S&P 500 — the 500 largest US companies. One SPY share = owning tiny pieces of Apple, Microsoft, Amazon, Google, and 496 more. Current price is around $541. It\'s grown from $100 in 1993 to over $500 today. Most beginners\' best friend.' },
+  { kw:['vti'],                 a:'VTI is Vanguard\'s Total Market ETF — it holds over 3,700 US stocks, not just the top 500 like SPY 🏦. It gives you even broader diversification. Extremely low fees (0.03% per year — almost free). Great choice if you want to own "the whole US market" in one click.' },
+
+  // ── TERMS & CONCEPTS ──
+  { kw:['p/e','pe ratio','price to earn','price-to-earn'], a:'P/E ratio is like a price tag for a company\'s profits 🏷️. If a stock has a P/E of 25, you\'re paying $25 for every $1 of annual profit. Lower P/E = potentially cheaper. But always compare within the same industry — tech stocks typically have P/Es of 25–40, which is normal. Banks are usually 10–15.' },
+  { kw:['dividend'],            a:'A dividend is a cash payment companies send to shareholders 💵. Own 100 shares of Coca-Cola at $1.84/share annual dividend? That\'s $184/year deposited into your account, just for holding the stock — like collecting rent. Not all companies pay dividends; fast-growing ones (like Amazon) usually reinvest profits instead.' },
+  { kw:['market cap'],          a:'Market cap = share price × total shares = company\'s total value 💰. It\'s how we size up companies:<br>• Mega cap: $1T+ (Apple, Microsoft)<br>• Large cap: $10B–$1T (Nike, Starbucks)<br>• Mid cap: $2B–$10B<br>• Small cap: under $2B (higher risk, higher potential)' },
+  { kw:['compound','compounding'], a:'Compound growth is the most powerful force in investing ⚡. You earn returns on your returns. Example: $1,000 at 10%/year becomes $1,100 after year 1, then $1,210 after year 2 (not $1,200 — because your $100 gain also earned 10%). After 30 years: $17,449. The longer you wait to start, the more you lose.' },
+  { kw:['dollar cost','dca'],   a:'Dollar-cost averaging (DCA) means investing a fixed amount regularly — say $100 every month — regardless of price 📅. When prices are high, you buy fewer shares. When they\'re low, you buy more. Over time this averages out your purchase price and removes the stress of trying to time the market perfectly.' },
+  { kw:['diversif'],            a:'Diversification = don\'t put all your eggs in one basket 🧺. If you only own Tesla and it drops 50%, you\'re hurt badly. But if you own 500 companies through an index fund, one company\'s crash barely moves your portfolio. Spreading across industries, company sizes, and even countries reduces risk significantly.' },
+  { kw:['bear market','bear'],  a:'A bear market is when the stock market falls 20% or more from its peak 🐻. They happen roughly every 3–5 years and typically last 9–18 months. Scary? Yes. But historically, every single bear market has been followed by a bull market that reached new highs. Long-term investors who held through them all came out ahead.' },
+  { kw:['bull market','bull'],  a:'A bull market is when stocks are rising — generally up 20%+ and climbing 🐂. The longest bull market in US history ran from 2009 to 2020 (11 years!). Bull markets tend to last longer than bear markets, which is why the long-term trend of stocks has always gone up over decades.' },
+  { kw:['recession'],           a:'A recession is when the economy shrinks for two consecutive quarters — businesses earn less, unemployment rises 📉. Stock markets usually fall during recessions, but they often start recovering 6–12 months before the recession officially ends. Historically, investors who stayed invested through recessions recovered all losses and then some.' },
+  { kw:['inflation'],           a:'Inflation means prices rise over time — your $100 buys less next year 💸. This is actually why investing is so important! Money sitting in a savings account at 0.5% loses purchasing power when inflation is 3%. Stocks historically return ~10%/year, well above inflation. Real estate and commodities also hedge against inflation.' },
+  { kw:['interest rate','fed','federal reserve'], a:'The Federal Reserve (Fed) sets interest rates, which affects the whole economy 🏛️. Higher rates = borrowing costs more = companies grow slower = stocks often fall. Lower rates = cheap borrowing = growth = stocks often rise. That\'s why every Fed meeting moves the markets. Current rates are a key factor in where stocks go.' },
+  { kw:['401k','401(k)'],       a:'A 401(k) is a tax-advantaged retirement account offered by employers 🏦. You invest pre-tax money (reducing your tax bill now), it grows tax-free, and you pay taxes when you withdraw in retirement. Many employers match contributions — that\'s free money! Contribute at least enough to get the full match. It\'s the best guaranteed return you\'ll ever get.' },
+  { kw:['ira','roth'],          a:'An IRA (Individual Retirement Account) is a tax-advantaged account you open yourself 📋. <strong>Traditional IRA</strong>: invest pre-tax money, pay taxes on withdrawal. <strong>Roth IRA</strong>: invest after-tax money, then NEVER pay taxes on growth or withdrawals. For most young investors, a Roth IRA is the better long-term choice.' },
+  { kw:['short sell','shorting','short the'],a:'Short selling is betting that a stock will go DOWN 📉. You borrow shares, sell them now, hope the price falls, then buy them back cheaper and pocket the difference. It\'s risky — if the stock goes up instead, your losses are theoretically unlimited. Not recommended for beginners. (This is what happened with GameStop in 2021!)' },
+  { kw:['options','call','put'], a:'Options are contracts giving you the right to buy or sell a stock at a set price by a set date 📜. <strong>Call option</strong>: bet the stock goes UP. <strong>Put option</strong>: bet it goes DOWN. They can multiply gains, but also wipe out your entire investment fast. Options are complex — most financial advisors recommend beginners stick to plain stocks and ETFs first.' },
+  { kw:['crypto','bitcoin','ethereum'], a:'Crypto (like Bitcoin or Ethereum) is a digital asset class — highly volatile and speculative compared to stocks 🎲. Bitcoin has returned incredible gains but also dropped 80%+ multiple times. Most financial advisors suggest keeping crypto to a small portion (5–10% max) of your portfolio if you invest in it at all. Never invest money you can\'t afford to lose.' },
+  { kw:['volume'],              a:'Volume is how many shares of a stock were traded in a day 📊. High volume means lots of people are buying and selling — usually easier to trade and more liquid. Very low volume stocks can be hard to sell quickly. A sudden spike in volume often signals major news or big investor interest in a stock.' },
+  { kw:['52 week','52w','52-week'], a:'The 52-week high and low show the highest and lowest price a stock traded at over the past year 📏. A stock trading near its 52-week high might have momentum but could be expensive. One near its 52-week low might be a bargain — or falling for a real reason. Always research why before deciding.' },
+
+  // ── SPECIFIC STOCKS ──
+  { kw:['apple','aapl'],        a:'Apple (AAPL) is one of the world\'s most valuable companies 🍎. It makes iPhones, Macs, AirPods, and services like the App Store and Apple Music. It has an incredibly loyal customer base and generates massive profits. With a P/E around 29 and a small dividend, it\'s considered a "quality growth" stock. Current price: ~$189.' },
+  { kw:['nvidia','nvda'],       a:'Nvidia (NVDA) makes the GPUs (graphics chips) that power AI, gaming, and data centers 🤖. It\'s become the essential hardware of the AI revolution — ChatGPT, Gemini, and almost every AI model trains on Nvidia chips. The stock has surged dramatically. High P/E (~72) reflects high growth expectations. Current price: ~$875.' },
+  { kw:['tesla','tsla'],        a:'Tesla (TSLA) makes electric vehicles, solar products, and energy storage 🚗⚡. CEO Elon Musk also runs SpaceX and X (Twitter). Tesla is pioneering self-driving technology which could be hugely valuable. The stock is volatile — big swings are normal. Some love it, some hate it. Current price: ~$199, down slightly today.' },
+  { kw:['microsoft','msft'],    a:'Microsoft (MSFT) is one of the safest large tech stocks 💻. It makes Windows, Office, Azure cloud services (growing 30%+/year), and owns LinkedIn and GitHub. Its $13B bet on OpenAI makes it a top AI play. It also pays a small dividend. P/E around 37. One of the most consistently profitable companies ever. Price: ~$415.' },
+  { kw:['amazon','amzn'],       a:'Amazon (AMZN) runs the world\'s largest online store AND the biggest cloud platform (AWS) 📦☁️. AWS is actually more profitable than the retail side. Amazon also has a booming $47B/year advertising business. No dividend — all profits reinvested into growth. P/E around 44. Price: ~$182.' },
+  { kw:['google','alphabet','googl'],a:'Alphabet (GOOGL) owns Google Search, YouTube, and Google Cloud 🔍. Google Search handles 8.5 billion queries daily. YouTube is the #2 most visited website. Google Cloud is growing 28%+/year. It now pays a small dividend. P/E around 26 — considered relatively cheap for a tech giant. Price: ~$172.' },
+
+  // ── PRACTICAL QUESTIONS ──
+  { kw:['how much','invest'],   a:'You can start with as little as $1 — many brokerages offer fractional shares 💵. A practical starting point: whatever you can invest consistently every month without stressing. $50/month at 10%/year average return grows to ~$113,000 over 30 years. $200/month becomes ~$452,000. Consistency beats starting amount every time.' },
+  { kw:['when','sell'],         a:'The hardest question in investing! 📤 General rules: (1) If your reason for buying no longer applies, consider selling. (2) If you need the money in the next 1–2 years, better to sell before then. (3) Don\'t sell just because the price dropped — that\'s often the worst time. (4) Rebalance once a year if any holding gets too large.' },
+  { kw:['tax','capital gain'],  a:'When you sell a stock for profit, you owe capital gains tax 🏛️. <strong>Short-term</strong> (held under 1 year): taxed as regular income — can be 10–37%. <strong>Long-term</strong> (held 1+ year): lower rate of 0%, 15%, or 20% depending on your income. This is why long-term investing is doubly smart — lower taxes AND time for growth.' },
+  { kw:['brokerage','broker','robinhood','fidelity','schwab'], a:'The three most popular beginner brokerages 🏦<br><br>• <strong>Fidelity</strong> — best overall, zero fees, great tools, excellent customer service<br>• <strong>Schwab</strong> — very similar to Fidelity, also excellent<br>• <strong>Robinhood</strong> — super simple app, good for very beginners, limited research tools<br><br>All three are free to open, have no account minimums, and are SIPC insured (your money is protected up to $500K).' },
+  { kw:['safe','lose money','risk'], a:'All investing carries some risk — stocks can go down 📉. The key risk reducers:<br><br>1. <strong>Diversify</strong> — own many stocks, not just one<br>2. <strong>Long time horizon</strong> — the S&P 500 has never lost money over any 20-year period in history<br>3. <strong>Only invest what you don\'t need soon</strong> — keep 3–6 months of expenses in cash first<br>4. <strong>Don\'t panic sell</strong> — downturns are temporary' },
+  { kw:['market','right now','today','current'], a:'As of this demo, markets are showing mixed signals 📊. The S&P 500 is around 5,431 (up ~0.83% today), Nasdaq at 17,204 (up 1.12%), and the Dow at 38,892 (down slightly). Tech stocks like Apple and Nvidia are leading gains. Note: EasyInvest uses demo data — for live prices, connect to a real-time data source.' },
+  { kw:['portfolio','mine','my'],  a:'Your demo portfolio shows $12,847 total (+16.8% all time) 💼. You hold Apple (5 shares), Nvidia (2 shares), SPY (8 shares), and Microsoft (3 shares). Today you\'re up $214. Your best performer is Nvidia, up significantly from your $620 average cost. Cash available: $1,234 — ready to deploy on your next pick!' },
+  { kw:['rebalance','rebalancing'], a:'Rebalancing means bringing your portfolio back to your target mix 🔄. Example: if you want 80% stocks / 20% cash but stocks grew to 90%, you\'d sell some stocks and hold more cash. Most advisors suggest rebalancing once a year. It forces you to "sell high" (trim winners) and "buy low" (add to laggards) — a proven strategy.' },
+  { kw:['hello','hi','hey','how are'], a:'Hey! 👋 I\'m doing great and ready to help you learn investing! Ask me anything — stock terms, how to start, what a specific company does, or how to think about risk. No question is too basic. What\'s on your mind?' },
+  { kw:['thank'],               a:'Happy to help! 😊 Investing can feel overwhelming at first, but you\'re asking the right questions. The fact that you\'re learning now puts you way ahead of most people. Keep going — your future self will thank you! Anything else you want to understand?' },
+];
+
+// Score a question against a rule's keywords
+function scoreRule(ql, kw){
+  return kw.filter(k => ql.includes(k)).length;
+}
+
+function findAnswer(q){
+  const ql = q.toLowerCase().replace(/[?!.,]/g,'');
+
+  // Find the rule with the most keyword matches (minimum 1)
+  let best = null, bestScore = 0;
+  for(const rule of AI_RULES){
+    const score = scoreRule(ql, rule.kw);
+    if(score > bestScore){ bestScore = score; best = rule; }
+  }
+  if(best && bestScore >= 1) return best.a;
+
+  // Fuzzy fallback: single important words
+  const fallbacks = [
+    {w:['stock','stocks','share','equity'],   a:'A stock is ownership in a company 🏢. Buy shares of a company and you own a piece of it — when it grows, so does your investment. Want me to explain more about how stocks work or how to buy your first one?'},
+    {w:['invest','investing','investment'],   a:'Investing means putting your money to work so it grows over time 💰. The most popular way: buy stocks or index funds through a brokerage like Fidelity or Schwab. Even small amounts — $25/month — compound into significant wealth over decades. Where would you like to start?'},
+    {w:['market'],                            a:'The stock market is a marketplace where buyers and sellers trade ownership in companies 🏛️. The S&P 500 tracks the 500 largest US companies and is the most watched benchmark. It\'s open Monday–Friday, 9:30am–4pm Eastern time.'},
+    {w:['money','cash','savings'],            a:'Great question about money! 💵 Investing is one of the best ways to make your savings grow faster than inflation. The general rule: keep 3–6 months of expenses in a savings account, then invest the rest for long-term goals. Want to know the best way to start?'},
+    {w:['profit','earn','gain','return'],     a:'Investment returns come in two forms: (1) Price appreciation — the stock goes up in value. (2) Dividends — companies pay you cash just for owning shares. Historically, the S&P 500 has returned about 10%/year on average, including both. That doubles your money roughly every 7 years! 📈'},
+    {w:['lose','loss','down','drop','fall'],  a:'Yes, stocks can go down — sometimes a lot 📉. The S&P 500 has dropped 50%+ twice in the last 25 years (2002, 2009). But it recovered both times and went to new highs. The key: diversify, invest for the long term (10+ years), and don\'t panic sell during downturns. Time heals almost all stock losses.'},
+  ];
+  for(const fb of fallbacks){
+    if(fb.w.some(w=>ql.includes(w))) return fb.a;
+  }
+
+  // True catch-all
+  return `That\'s a great investing question! 🤔 To give you the best answer, I'd need a bit more context. Here\'s what I can definitely help with: how stocks work, how to start investing, understanding terms like ETFs, P/E ratio, dividends, index funds, or specific stocks like Apple or Nvidia. What would you like to dive into?`;
+}
+
+const chatHistory = [{role:'assistant', content:'👋 Hi! I\'m your EasyInvest AI guide. Ask me <em>anything</em> about investing — I\'ll always explain it simply, no jargon. What would you like to know?'}];
+let chatLoading = false;
+
+function renderChat(){
+  const el = document.getElementById('chat-msgs');
+  el.innerHTML = chatHistory.map(m=>
+    `<div class="msg ${m.role==='user'?'mu':'ma'}">${m.content}</div>`).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+function quickAsk(q){
+  document.getElementById('chat-input').value = q;
+  sendChat();
+}
+
+async function sendChat(){
+  if(chatLoading) return;
+  const input = document.getElementById('chat-input');
+  const q = input.value.trim();
+  if(!q) return;
+  input.value = '';
+
+  chatHistory.push({role:'user', content:q});
+  // Show typing dots immediately
+  chatHistory.push({role:'assistant', content:'__typing__'});
+  renderChat();
+  // Swap last bubble to animated dots
+  const msgs = document.getElementById('chat-msgs');
+  if(msgs.lastElementChild) msgs.lastElementChild.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  chatLoading = true;
+
+  // Simulate thinking delay (300–700ms feels natural)
+  await new Promise(r=>setTimeout(r, 300 + Math.random()*400));
+
+  const answer = findAnswer(q);
+  // Replace typing placeholder
+  const idx = chatHistory.findIndex(m=>m.content==='__typing__');
+  if(idx>-1) chatHistory[idx] = {role:'assistant', content:answer};
+  else chatHistory.push({role:'assistant', content:answer});
+
+  renderChat();
+  chatLoading = false;
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+document.addEventListener('DOMContentLoaded',()=>{
+  renderTrending();
+  renderWatchlist();
+  renderHoldings();
+  renderTips();
+  renderChecklist();
+  renderQuickBtns();
+  renderChat();
+  setTimeout(initIndexChart,100);
+});
+</script>
+</body>
+</html>
